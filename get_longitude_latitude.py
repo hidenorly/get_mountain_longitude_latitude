@@ -18,16 +18,6 @@ import argparse
 import unicodedata
 from bs4 import BeautifulSoup
 
-def ljust_jp(value, length, pad = " "):
-  count_length = 0
-  for char in value.encode().decode('utf8'):
-    if ord(char) <= 255:
-      count_length += 1
-    else:
-      count_length += 2
-  return value + pad * (length-count_length)
-
-
 def getLongtitudeLatitudeFromUrl( url ):
   result = {}
   result["longitude"] = ""
@@ -89,6 +79,11 @@ def dump(aMountain):
 if __name__=="__main__":
   result = getMountainLongitudeLatitude("https://www.gsi.go.jp/kihonjohochousa/kihonjohochousa41140.html")
   print( "mountainLocationDic=[")
-  for anMontain in result:
-    dump(anMontain)
+  for aMountain in result:
+    dump(aMountain)
   print( "]")
+
+  print('''
+def getMountainLocationDic():
+  return mountainLocationDic
+''')
