@@ -22,6 +22,26 @@ from geopy.distance import geodesic
 import mountainLocationDic
 mountainLocationDic = mountainLocationDic.getMountainLocationDic()
 
+def ljust_jp(value, length, pad = " "):
+  count_length = 0
+  for char in value.encode().decode('utf8'):
+    if ord(char) <= 255:
+      count_length += 1
+    else:
+      count_length += 2
+  return value + pad * (length-count_length)
+
+def printMountainInfo(aMountain, showMountainNameOnly):
+  if showMountainNameOnly:
+    print( aMountain["name"], end=" ")
+  else:
+    print( aMountain["name"] + "(" + aMountain["yomi"] + ")" )
+    print( ljust_jp( "altitude", 20 ) + " : " + aMountain["altitude"] )
+    print( ljust_jp( "location", 20 ) + " : " + aMountain["longitude"] + " " + aMountain["latitude"] )
+    print( ljust_jp( "area", 20 ) + " : " + aMountain["area"] )
+    print( ljust_jp( "range", 20 ) + " : " + str( int( aMountain["distanceDelta"] ) ) + "km" )
+    print( "" )
+
 def dump(aMountain):
   if "distanceDelta" in aMountain:
     print( "  {\"name\":\"" + aMountain["name"] +"\", \"yomi\":\"" + aMountain["yomi"] + "\", \"range\":\"" + str( int( aMountain["distanceDelta"] ) ) + "\", \"area\":\"" + aMountain["area"] +"\", \"longitude\":\"" + aMountain["longitude"] +"\", \"latitude\":\"" + aMountain["latitude"] +"\", \"altitude\":\"" + aMountain["altitude"] +"\"}," )
@@ -33,7 +53,7 @@ def getMountainLocationInfoFromMountainName( mountainName ):
   results = []
 
   for aMountain in mountainLocationDic:
-    if aMountain["name"] == mountainName:
+    if aMountain["name"].find( mountainName )!=-1 or aMountain["yomi"].find( mountainName )!=-1 or aMountain["area"].find( mountainName )!=-1:
       results.append( aMountain )
 
   return results
@@ -63,8 +83,10 @@ def getRangedMountains( longitude, latitude, rangeMinKm, rangeMaxKm ):
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
   parser.add_argument('args', nargs='*', help='mountain name such as 富士山 or longitude latitude')
-  parser.add_argument('-r', '--rangeMax', action='store', default='100', help='Max distance')
+  parser.add_argument('-r', '--rangeMax', action='store', default='0', help='Max distance')
   parser.add_argument('-m', '--rangeMin', action='store', default='0', help='Min distance')
+  parser.add_argument('-n', '--mountainNameOnly', action='store_true', default=False, help='List up mountain name only')
+  parser.add_argument('-j', '--json', action='store_true', default=False, help='output in json manner')
 
   args = parser.parse_args()
 
@@ -72,19 +94,35 @@ if __name__=="__main__":
     parser.print_help()
     exit(-1)
 
+  locationList = []
+
   if len(args.args) == 1:
     mountainList = getMountainLocationInfoFromMountainName( args.args[0] )
     for aMountain in mountainList:
-      dump(aMountain)
+      locationList.append( aMountain )
   elif len(args.args) == 2:
-    longitude = args.args[0]
-    latitude = args.args[1]
-    rangeMin = args.rangeMin
-    rangeMax = args.rangeMax
-    print( "longitude: " + longitude + " , latitude: " + latitude + " range[km]: >=" + rangeMin + ", <=" + rangeMax )
+    aLocation = {}
+    aLocation["longitude"] = args.args[0]
+    aLocation["latitude"] = args.args[1]
+    locationList.append( aLocation )
 
-    result = getRangedMountains( longitude, latitude, float(rangeMin), float(rangeMax) )
-    result = sorted(result, key=lambda x: x["distanceDelta"], reverse=False)
+  rangeMin = args.rangeMin
+  rangeMax = args.rangeMax
 
-    for aMountain in result:
-      dump(aMountain)
+  result = []
+
+  for aLocation in locationList:
+    aMountainList = getRangedMountains( aLocation["longitude"], aLocation["latitude"], float(rangeMin), float(rangeMax) )
+    for aMountain in aMountainList:
+      result.append( aMountain )
+
+  result = sorted(result, key=lambda x: x["distanceDelta"], reverse=False)
+
+  for aMountain in result:
+    if args.json:
+      dump( aMountain )
+    else:
+      printMountainInfo( aMountain, args.mountainNameOnly )
+
+  if args.mountainNameOnly:
+    print( "" )
