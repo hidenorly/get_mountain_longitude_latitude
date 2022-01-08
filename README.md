@@ -93,3 +93,9 @@ range                : 6km
 ```
 $ python3 get_mountain_list.py 男体山 --rangeMax=10
 ```
+
+## Advanced usage
+
+```
+$ python3 get_mountain_list.py 男体山 --rangeMax=10 -n | xargs python3 tenkura_get_weather.py -c
+```
