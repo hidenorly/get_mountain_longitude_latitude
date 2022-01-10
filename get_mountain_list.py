@@ -18,9 +18,11 @@ import argparse
 import unicodedata
 from geopy.distance import geodesic
 
-
 import mountainLocationDic
 mountainLocationDic = mountainLocationDic.getMountainLocationDic()
+
+import mountainInfoDic
+mountainInfoDic = mountainInfoDic.getMountainInfoDic()
 
 def ljust_jp(value, length, pad = " "):
   count_length = 0
@@ -68,14 +70,43 @@ def getDistanceKm(longitude1, latitude1, longitude2, latitude2):
   return dis
 
 
-def getRangedMountains( longitude, latitude, rangeMinKm, rangeMaxKm ):
+def isFamousMountain( aMountain ):
+  result = False
+  name = aMountain["name"]
+
+  # 1st phase name match
+  theMountain = None
+  if name in mountainInfoDic:
+    theMountain = mountainInfoDic[name]
+  else:
+    pos = name.find("<")
+    if pos!=-1:
+      name = name[0:pos]
+    pos = name.find("(")
+    if pos!=-1:
+      name = name[0:pos]
+    for nameOfInfo, theInfo in mountainInfoDic.items():
+      if nameOfInfo.find( name )!=-1:
+        theMountain = theInfo
+        break
+
+  # 2nd phase famous
+  if theMountain!=None:
+    if theMountain["type"]!="":
+      result = True
+
+  return result
+
+
+def getRangedMountains( longitude, latitude, rangeMinKm, rangeMaxKm, onlyFamousMountain ):
   result = []
 
   for aMountain in mountainLocationDic:
     distanceDelta = getDistanceKm( longitude, latitude, aMountain["longitude"], aMountain["latitude"] )
     if( distanceDelta >= rangeMinKm and distanceDelta <= rangeMaxKm ):
       aMountain["distanceDelta"] = distanceDelta
-      result.append( aMountain )
+      if ( onlyFamousMountain and isFamousMountain( aMountain ) ) or (not onlyFamousMountain):
+        result.append( aMountain )
 
   return result
 
@@ -87,6 +118,7 @@ if __name__=="__main__":
   parser.add_argument('-m', '--rangeMin', action='store', default='0', help='Min distance')
   parser.add_argument('-n', '--mountainNameOnly', action='store_true', default=False, help='List up mountain name only')
   parser.add_argument('-j', '--json', action='store_true', default=False, help='output in json manner')
+  parser.add_argument('-f', '--famous', action='store_true', default=False, help='Only famous mountains such as 100th, 200th and 300th mountains')
 
   args = parser.parse_args()
 
@@ -112,7 +144,7 @@ if __name__=="__main__":
   result = []
 
   for aLocation in locationList:
-    aMountainList = getRangedMountains( aLocation["longitude"], aLocation["latitude"], float(rangeMin), float(rangeMax) )
+    aMountainList = getRangedMountains( aLocation["longitude"], aLocation["latitude"], float(rangeMin), float(rangeMax), args.famous )
     for aMountain in aMountainList:
       result.append( aMountain )
 
