@@ -98,14 +98,26 @@ def isFamousMountain( aMountain ):
   return result
 
 
-def getRangedMountains( longitude, latitude, rangeMinKm, rangeMaxKm, onlyFamousMountain ):
+def getRangedMountains( longitude, latitude, rangeMinKm, rangeMaxKm, onlyFamousMountain, altitudeMin, altitudeMax ):
   result = []
 
   for aMountain in mountainLocationDic:
     distanceDelta = getDistanceKm( longitude, latitude, aMountain["longitude"], aMountain["latitude"] )
     if( distanceDelta >= rangeMinKm and distanceDelta <= rangeMaxKm ):
       aMountain["distanceDelta"] = distanceDelta
-      if ( onlyFamousMountain and isFamousMountain( aMountain ) ) or (not onlyFamousMountain):
+
+      # altitude check
+      isAltitudeOk = False
+      if "altitude" in aMountain:
+        theAltitude = aMountain["altitude"]
+        if theAltitude.endswith("m"):
+          theAltitude = theAltitude[0:len(theAltitude)-1]
+        theAltitude = int( theAltitude )
+        if theAltitude>=int(altitudeMin) and theAltitude<=int(altitudeMax):
+          isAltitudeOk = True
+
+      # famous mountain check
+      if ( isAltitudeOk and ( onlyFamousMountain and isFamousMountain( aMountain ) or (not onlyFamousMountain) ) ):
         result.append( aMountain )
 
   return result
@@ -119,6 +131,8 @@ if __name__=="__main__":
   parser.add_argument('-n', '--mountainNameOnly', action='store_true', default=False, help='List up mountain name only')
   parser.add_argument('-j', '--json', action='store_true', default=False, help='output in json manner')
   parser.add_argument('-f', '--famous', action='store_true', default=False, help='Only famous mountains such as 100th, 200th and 300th mountains')
+  parser.add_argument('-a', '--altitudeMin', action='store', default='0', help='Min altitude')
+  parser.add_argument('-t', '--altitudeMax', action='store', default='9000', help='Max altitude')
 
   args = parser.parse_args()
 
@@ -144,7 +158,7 @@ if __name__=="__main__":
   result = []
 
   for aLocation in locationList:
-    aMountainList = getRangedMountains( aLocation["longitude"], aLocation["latitude"], float(rangeMin), float(rangeMax), args.famous )
+    aMountainList = getRangedMountains( aLocation["longitude"], aLocation["latitude"], float(rangeMin), float(rangeMax), args.famous, args.altitudeMin, args.altitudeMax )
     for aMountain in aMountainList:
       result.append( aMountain )
 
