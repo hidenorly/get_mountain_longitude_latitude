@@ -47,6 +47,8 @@ def printMountainInfo(aMountain, showMountainNameOnly):
       print( ljust_jp( "difficulty", 20 ) + " : " + aMountain["difficulty"] )
     if "fitnessLevel" in aMountain and aMountain["fitnessLevel"]:
       print( ljust_jp( "fitnessLevel", 20 ) + " : " + aMountain["fitnessLevel"] )
+    if "famous" in aMountain and aMountain["famous"]:
+      print( ljust_jp( "famous", 20 ) + " : " + aMountain["famous"] )
     print( "" )
 
 def dump(aMountain):
@@ -116,6 +118,17 @@ def isFamousMountainInfo( theMountain ):
 
   return result
 
+def isDifficultyAcceptableMountainInfo( theMountain, difficultMin, difficultMax ):
+  result = True
+
+  if theMountain!=None:
+    if "difficulty" in theMountain and theMountain["difficulty"]:
+      difficulty = getStarRank( theMountain["difficulty"] )
+      if difficulty<difficultMin or difficulty>difficultMax:
+        result = False
+
+  return result
+
 def isFitnessAcceptableMountainInfo( theMountain, fitnessMin, fitnessMax ):
   result = True
 
@@ -128,7 +141,7 @@ def isFitnessAcceptableMountainInfo( theMountain, fitnessMin, fitnessMax ):
   return result
 
 
-def getRangedMountains( longitude, latitude, rangeMinKm, rangeMaxKm, onlyFamousMountain, altitudeMin, altitudeMax, fitnessMin, fitnessMax ):
+def getRangedMountains( longitude, latitude, rangeMinKm, rangeMaxKm, onlyFamousMountain, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax ):
   result = []
 
   for aMountain in mountainLocationDic:
@@ -152,14 +165,21 @@ def getRangedMountains( longitude, latitude, rangeMinKm, rangeMaxKm, onlyFamousM
       if "altitude" in theMountainInfo:
         aMountain["altitude"] = aMountain["altitude"] + " (" + theMountainInfo["altitude"] + ")"
 
-      # famous mountain, fitnessMountain check
-      if ( isAltitudeOk and ( onlyFamousMountain and isFamousMountainInfo( theMountainInfo ) or (not onlyFamousMountain) ) and isFitnessAcceptableMountainInfo( theMountainInfo, fitnessMin, fitnessMax )):
+      # famous mountain, fitnessLevel Mountain check
+      if ( isAltitudeOk and ( onlyFamousMountain and isFamousMountainInfo( theMountainInfo ) or (not onlyFamousMountain) ) and isFitnessAcceptableMountainInfo( theMountainInfo, fitnessMin, fitnessMax ) and isDifficultyAcceptableMountainInfo( theMountainInfo, difficultMin, difficultMax ) ):
         if "difficulty" in theMountainInfo:
           aMountain["difficulty"] = theMountainInfo["difficulty"]
         if "fitnessLevel" in theMountainInfo:
           aMountain["fitnessLevel"] = theMountainInfo["fitnessLevel"]
+        if "type" in theMountainInfo:
+          aMountain["famous"] = theMountainInfo["type"]
         result.append( aMountain )
 
+  return result
+
+
+def fallbackSearch(name):
+  result = []
   return result
 
 
@@ -173,8 +193,10 @@ if __name__=="__main__":
   parser.add_argument('-f', '--famous', action='store_true', default=False, help='Only famous mountains such as 100th, 200th and 300th mountains')
   parser.add_argument('-a', '--altitudeMin', action='store', default='0', help='Min altitude')
   parser.add_argument('-t', '--altitudeMax', action='store', default='9000', help='Max altitude')
-  parser.add_argument('-k', '--fitnessMin', action='store', default='', help='Min altitude')
-  parser.add_argument('-g', '--fitnessMax', action='store', default='★★★★★', help='Max altitude')
+  parser.add_argument('-e', '--difficultMin', action='store', default='', help='Min difficulty')
+  parser.add_argument('-d', '--difficultMax', action='store', default='★★★★★', help='Max difficulty')
+  parser.add_argument('-k', '--fitnessMin', action='store', default='', help='Min fitnessLevel')
+  parser.add_argument('-g', '--fitnessMax', action='store', default='★★★★★', help='Max fitnessLevel')
 
   args = parser.parse_args()
 
@@ -200,11 +222,15 @@ if __name__=="__main__":
   result = []
 
   for aLocation in locationList:
-    aMountainList = getRangedMountains( aLocation["longitude"], aLocation["latitude"], float(rangeMin), float(rangeMax), args.famous, int(args.altitudeMin), int(args.altitudeMax), getStarRank(args.fitnessMin), getStarRank(args.fitnessMax) )
+    aMountainList = getRangedMountains( aLocation["longitude"], aLocation["latitude"], float(rangeMin), float(rangeMax), args.famous, int(args.altitudeMin), int(args.altitudeMax), getStarRank(args.difficultMin), getStarRank(args.difficultMax), getStarRank(args.fitnessMin), getStarRank(args.fitnessMax) )
     for aMountain in aMountainList:
       result.append( aMountain )
 
   result = sorted(result, key=lambda x: x["distanceDelta"], reverse=False)
+
+  if len( result ) == 0:
+    # fallback search in the mountainInfoDic
+    result = fallbackSearch( args.args[0] )
 
   for aMountain in result:
     if args.json:
