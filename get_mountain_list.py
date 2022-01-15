@@ -154,11 +154,11 @@ def isAltitudeAcceptableMountainInfo(aMountain, altitudeMin, altitudeMax):
   return isAltitudeOk
 
 
-def filterOutMountains(mountains, onlyFamousMountain, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax):
+def filterOutMountains(mountains, onlyFamousMountain, area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax):
   result = []
 
   for aMountain in mountains:
-    if ( isAltitudeAcceptableMountainInfo( aMountain, altitudeMin, altitudeMax ) and ( onlyFamousMountain and isFamousMountainInfo( aMountain ) or (not onlyFamousMountain) ) and isFitnessAcceptableMountainInfo( aMountain, fitnessMin, fitnessMax ) and isDifficultyAcceptableMountainInfo( aMountain, difficultMin, difficultMax ) ):
+    if ( ( area=="" or aMountain["area"].find(area)!=-1 ) and isAltitudeAcceptableMountainInfo( aMountain, altitudeMin, altitudeMax ) and ( onlyFamousMountain and isFamousMountainInfo( aMountain ) or (not onlyFamousMountain) ) and isFitnessAcceptableMountainInfo( aMountain, fitnessMin, fitnessMax ) and isDifficultyAcceptableMountainInfo( aMountain, difficultMin, difficultMax ) ):
       result.append( aMountain )
 
   return result
@@ -218,17 +218,18 @@ def fallbackSearch(name):
           theMountain["yomi"] = aLocationMountain["yomi"]
           theMountain["longitude"] = aLocationMountain["longitude"]
           theMountain["latitude"] = aLocationMountain["latitude"]
+          theMountain["area"] = theInfo["area"] + " (" + aLocationMountain["area"] +")"
         else:
           theMountain["yomi"] = ""
           theMountain["longitude"] = ""
           theMountain["latitude"] = ""
+          theMountain["area"] = theInfo["area"]
 
         theMountain["altitude"] = theInfo["altitude"]
         theMountain["range"] = 0
         theMountain["difficulty"] = theInfo["difficulty"]
         theMountain["fitnessLevel"] = theInfo["fitnessLevel"]
         theMountain["famous"] = theInfo["type"]
-        theMountain["area"] = theInfo["area"]
 
         result.append( theMountain )
 
@@ -243,7 +244,8 @@ if __name__=="__main__":
   parser.add_argument('-n', '--mountainNameOnly', action='store_true', default=False, help='List up mountain name only')
   parser.add_argument('-j', '--json', action='store_true', default=False, help='output in json manner')
   parser.add_argument('-f', '--famous', action='store_true', default=False, help='Only famous mountains such as 100th, 200th and 300th mountains')
-  parser.add_argument('-a', '--altitudeMin', action='store', default='0', help='Min altitude')
+  parser.add_argument('-a', '--area', action='store', default='', help='Area')
+  parser.add_argument('-i', '--altitudeMin', action='store', default='0', help='Min altitude')
   parser.add_argument('-t', '--altitudeMax', action='store', default='9000', help='Max altitude')
   parser.add_argument('-e', '--difficultMin', action='store', default='', help='Min difficulty')
   parser.add_argument('-d', '--difficultMax', action='store', default='★★★★★', help='Max difficulty')
@@ -303,7 +305,7 @@ if __name__=="__main__":
     result = fallbackSearch( args.args[0] )
 
   # filter out
-  result = filterOutMountains(result, args.famous, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax )
+  result = filterOutMountains(result, args.famous, args.area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax )
 
   # dump
   for aMountain in result:
