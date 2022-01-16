@@ -18,8 +18,7 @@ import argparse
 import unicodedata
 from geopy.distance import geodesic
 
-import mountainLocationDic
-mountainLocationDic = mountainLocationDic.getMountainLocationDicArray() #getMountainLocationDic()
+import mountainLocationDicHelper
 
 import mountainInfoDic
 mountainInfoDic = mountainInfoDic.getMountainInfoDic()
@@ -92,16 +91,6 @@ def dump(aMountain):
     print( "  {\"name\":\"" + aMountain["name"] +"\", \"yomi\":\"" + aMountain["yomi"] +"\", \"area\":\"" + aMountain["area"] +"\", \"longitude\":\"" + aMountain["longitude"] +"\", \"latitude\":\"" + aMountain["latitude"] +"\", \"altitude\":\"" + aMountain["altitude"] +"\"}," )
 
 
-def getMountainLocationInfoFromMountainName( mountainName ):
-  results = []
-
-  for aMountain in mountainLocationDic:
-    if aMountain["name"].find( mountainName )!=-1 or aMountain["yomi"].find( mountainName )!=-1 or aMountain["area"].find( mountainName )!=-1:
-      results.append( aMountain )
-
-  return results
-
-
 def getDistanceKm(longitude1, latitude1, longitude2, latitude2):
   location1 = (longitude1, latitude1)
   location2 = (longitude2, latitude2)
@@ -134,6 +123,9 @@ def getCandidateMountainInfo( name ):
     if pos!=-1:
       name = name[0:pos]
     pos = name.find("(")
+    if pos!=-1:
+      name = name[0:pos]
+    pos = name.find("（")
     if pos!=-1:
       name = name[0:pos]
     for nameOfInfo, theInfo in mountainInfoDic.items():
@@ -201,7 +193,7 @@ def filterOutMountains(mountains, onlyFamousMountain, area, altitudeMin, altitud
 def getRangedMountains( longitude, latitude, rangeMinKm, rangeMaxKm ):
   result = []
 
-  for aMountain in mountainLocationDic:
+  for aMountain in mountainLocationDicHelper.getMountainLocationDicArray():
     distanceDelta = getDistanceKm( longitude, latitude, aMountain["longitude"], aMountain["latitude"] )
     if( distanceDelta >= rangeMinKm and distanceDelta <= rangeMaxKm ):
       aMountain["distanceDelta"] = distanceDelta
@@ -222,10 +214,14 @@ def getRangedMountains( longitude, latitude, rangeMinKm, rangeMaxKm ):
 
 def getLocationMountainByName(name, nameOfInfo):
   aLocationMountain = None
-  for aMountain in mountainLocationDic:
-    if aMountain["name"].find(name)!=-1 or aMountain["name"].find(nameOfInfo)!=-1:
-      aLocationMountain = aMountain
-      break
+
+  results = mountainLocationDicHelper.getMountainLocationInfoFromMountainName(name)
+  if len(results) == 0:
+    results = mountainLocationDicHelper.getMountainLocationInfoFromMountainName(nameOfInfo)
+
+  if len(results):
+    aLocationMountain = results[0]
+
   return aLocationMountain
 
 
@@ -304,9 +300,9 @@ if __name__=="__main__":
 
   locationList = []
 
-  # search by longitude/latitude or name in mountainLocationDic
+  # search by longitude/latitude or name in mountainLocationDicHelper.getMountainLocationDicArray()
   if len(args.args) == 1:
-    mountainList = getMountainLocationInfoFromMountainName( args.args[0] )
+    mountainList = mountainLocationDicHelper.getMountainLocationInfoFromMountainName( args.args[0] )
     for aMountain in mountainList:
       locationList.append( aMountain )
   elif len(args.args) == 2:
