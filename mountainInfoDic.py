@@ -358,13 +358,19 @@ def getMountainInfoDic():
       pos = name.find("<")
       if pos!=-1:
         pos2 = name.find(">")
-        result[ name[pos:pos2] ] = anInfo
+        result[ name[pos+1:pos2] ] = anInfo
         name = name[0:pos]
       pos = name.find("(")
       if pos!=-1:
         pos2 = name.find(")")
-        result[ name[pos:pos2] ] = anInfo
+        result[ name[pos+1:pos2] ] = anInfo
         name = name[0:pos]
+      pos = name.find("（")
+      if pos!=-1:
+        pos2 = name.find("）")
+        result[ name[pos+1:pos2] ] = anInfo
+        name = name[0:pos]
+
       result[ name ] = anInfo
 
   return result

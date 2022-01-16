@@ -19,7 +19,7 @@ import unicodedata
 from geopy.distance import geodesic
 
 import mountainLocationDic
-mountainLocationDic = mountainLocationDic.getMountainLocationDic()
+mountainLocationDic = mountainLocationDic.getMountainLocationDicArray() #getMountainLocationDic()
 
 import mountainInfoDic
 mountainInfoDic = mountainInfoDic.getMountainInfoDic()
@@ -33,23 +33,57 @@ def ljust_jp(value, length, pad = " "):
       count_length += 2
   return value + pad * (length-count_length)
 
-def printMountainInfo(aMountain, showMountainNameOnly):
-  if showMountainNameOnly:
-    print( aMountain["name"], end=" ")
-  else:
-    print( aMountain["name"] + "(" + aMountain["yomi"] + ")" )
-    print( ljust_jp( "altitude", 20 ) + " : " + aMountain["altitude"] )
-    print( ljust_jp( "location", 20 ) + " : " + aMountain["longitude"] + " " + aMountain["latitude"] )
-    print( ljust_jp( "area", 20 ) + " : " + aMountain["area"] )
-    if "distanceDelta" in aMountain and aMountain["distanceDelta"]:
-      print( ljust_jp( "range", 20 ) + " : " + str( int( aMountain["distanceDelta"] ) ) + "km" )
-    if "difficulty" in aMountain and aMountain["difficulty"]:
-      print( ljust_jp( "difficulty", 20 ) + " : " + aMountain["difficulty"] )
-    if "fitnessLevel" in aMountain and aMountain["fitnessLevel"]:
-      print( ljust_jp( "fitnessLevel", 20 ) + " : " + aMountain["fitnessLevel"] )
-    if "famous" in aMountain and aMountain["famous"]:
-      print( ljust_jp( "famous", 20 ) + " : " + aMountain["famous"] )
-    print( "" )
+def getMountainNames(name, isAll = True, isFlat = False, flatSpacer=" "):
+  result = []
+
+  minPos = []
+  pos = name.find("<")
+  if pos!=-1:
+    minPos.append(pos)
+    pos2 = name.find(">")
+    result.append( name[pos+1:pos2] )
+  pos = name.find("(")
+  if pos!=-1:
+    minPos.append(pos)
+    pos2 = name.find(")")
+    result.append( name[pos+1:pos2] )
+  pos = name.find("（")
+  if pos!=-1:
+    minPos.append(pos)
+    pos2 = name.find("）")
+    result.append( name[pos+1:pos2] )
+
+  if len(minPos):
+    minPos = min(minPos)
+    result.insert(0, name[0:minPos] )
+
+  if isAll or len( result ) == 0:
+    result.insert(0, name)
+
+  if isFlat:
+    flatResult = ""
+    for aResult in result:
+      flatResult = flatResult + aResult + flatSpacer
+    if flatResult.endswith(flatSpacer):
+      flatResult = flatResult[0:len(flatResult)]
+    result = flatResult
+
+  return result
+
+def printMountainInfo(aMountain):
+  print( aMountain["name"] + "(" + aMountain["yomi"] + ")" )
+  print( ljust_jp( "altitude", 20 ) + " : " + aMountain["altitude"] )
+  print( ljust_jp( "location", 20 ) + " : " + aMountain["longitude"] + " " + aMountain["latitude"] )
+  print( ljust_jp( "area", 20 ) + " : " + aMountain["area"] )
+  if "distanceDelta" in aMountain and aMountain["distanceDelta"]:
+    print( ljust_jp( "range", 20 ) + " : " + str( int( aMountain["distanceDelta"] ) ) + "km" )
+  if "difficulty" in aMountain and aMountain["difficulty"]:
+    print( ljust_jp( "difficulty", 20 ) + " : " + aMountain["difficulty"] )
+  if "fitnessLevel" in aMountain and aMountain["fitnessLevel"]:
+    print( ljust_jp( "fitnessLevel", 20 ) + " : " + aMountain["fitnessLevel"] )
+  if "famous" in aMountain and aMountain["famous"]:
+    print( ljust_jp( "famous", 20 ) + " : " + aMountain["famous"] )
+  print( "" )
 
 def dump(aMountain):
   if "distanceDelta" in aMountain:
@@ -242,6 +276,7 @@ if __name__=="__main__":
   parser.add_argument('-r', '--rangeMax', action='store', default='0', help='Max distance')
   parser.add_argument('-m', '--rangeMin', action='store', default='0', help='Min distance')
   parser.add_argument('-n', '--mountainNameOnly', action='store_true', default=False, help='List up mountain name only')
+  parser.add_argument('-nn', '--mountainNameOnlyFlat', action='store_true', default=False, help='List up mountain name only (list up alternative name too)')
   parser.add_argument('-j', '--json', action='store_true', default=False, help='output in json manner')
   parser.add_argument('-f', '--famous', action='store_true', default=False, help='Only famous mountains such as 100th, 200th and 300th mountains')
   parser.add_argument('-a', '--area', action='store', default='', help='Area')
@@ -308,11 +343,23 @@ if __name__=="__main__":
   result = filterOutMountains(result, args.famous, args.area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax )
 
   # dump
+  mountainOnlyNames = {}
   for aMountain in result:
     if args.json:
       dump( aMountain )
     else:
-      printMountainInfo( aMountain, args.mountainNameOnly )
+      if args.mountainNameOnly or args.mountainNameOnlyFlat:
+        mountains = getMountainNames( aMountain["name"], not args.mountainNameOnlyFlat)
+        if args.mountainNameOnlyFlat:
+          for aName in mountains:
+            mountainOnlyNames[aName] = aName
+        else:
+          if len(mountains):
+            mountainOnlyNames[mountains[0]] = mountains[0]
+      else:
+        printMountainInfo( aMountain )
 
-  if args.mountainNameOnly:
+  if args.mountainNameOnly or args.mountainNameOnlyFlat:
+    for aName, aName in mountainOnlyNames.items():
+      print( aName, end = " ")
     print( "" )
