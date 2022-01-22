@@ -25,6 +25,43 @@ $ python3 pip install geopy
 
 # how to use?
 
+```
+usage: get_mountain_list.py [-h] [-r RANGEMAX] [-m RANGEMIN] [-n] [-nn] [-j] [-f] [-a AREA] [-i ALTITUDEMIN] [-t ALTITUDEMAX]
+                            [-e DIFFICULTMIN] [-d DIFFICULTMAX] [-k FITNESSMIN] [-g FITNESSMAX]
+                            [args ...]
+
+Parse command line options.
+
+positional arguments:
+  args                  mountain name such as 富士山 or longitude latitude
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -r RANGEMAX, --rangeMax RANGEMAX
+                        Max distance
+  -m RANGEMIN, --rangeMin RANGEMIN
+                        Min distance
+  -n, --mountainNameOnly
+                        List up mountain name only
+  -nn, --mountainNameOnlyFlat
+                        List up mountain name only (list up alternative name too)
+  -j, --json            output in json manner
+  -f, --famous          Only famous mountains such as 100th, 200th and 300th mountains
+  -a AREA, --area AREA  Area
+  -i ALTITUDEMIN, --altitudeMin ALTITUDEMIN
+                        Min altitude
+  -t ALTITUDEMAX, --altitudeMax ALTITUDEMAX
+                        Max altitude
+  -e DIFFICULTMIN, --difficultMin DIFFICULTMIN
+                        Min difficulty
+  -d DIFFICULTMAX, --difficultMax DIFFICULTMAX
+                        Max difficulty
+  -k FITNESSMIN, --fitnessMin FITNESSMIN
+                        Min fitnessLevel
+  -g FITNESSMAX, --fitnessMax FITNESSMAX
+                        Max fitnessLevel
+```
+
 ## dump mountain location, etc. info.
 
 ```
@@ -97,5 +134,11 @@ $ python3 get_mountain_list.py 男体山 --rangeMax=10
 ## Advanced usage
 
 ```
-$ python3 get_mountain_list.py 男体山 --rangeMax=10 -n | xargs python3 tenkura_get_weather.py -c
+$ python3 get_mountain_list.py 栃木県 --famous
+$ python3 get_mountain_list.py アルプス --altitudeMin=2000
+$ python3 get_mountain_list.py アルプス --difficultMax="★★" --fitnessMax="★★"
+```
+
+```
+$ python3 get_mountain_list.py 男体山 --rangeMax=10 -nn | xargs python3 tenkura_get_weather.py -c
 ```
