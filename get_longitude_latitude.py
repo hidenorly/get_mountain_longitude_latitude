@@ -52,7 +52,7 @@ def getMountainLongitudeLatitude(url):
           theUrl = aLink.get("href").strip()
           theText = aLink.get_text().strip()
           aLongLati = getLongtitudeLatitudeFromUrl( theUrl )
-          aResult["name"] = theText
+          aResult["name"] = theText.strip()
           aResult["longitude"] = aLongLati["longitude"]
           aResult["latitude"] = aLongLati["latitude"]
           break
@@ -65,8 +65,7 @@ def getMountainLongitudeLatitude(url):
             aResult["yomi"] = cols[0].text.strip()
             pos = aResult["yomi"].find( aResult["name"] )
             if pos!=-1:
-              aResult["yomi"]=aResult["yomi"][0:pos]
-
+              aResult["yomi"]=aResult["yomi"][0:pos].strip()
         if aResult["name"]!=None:
           result.append( aResult )
 

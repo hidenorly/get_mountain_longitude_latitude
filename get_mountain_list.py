@@ -70,9 +70,13 @@ def getMountainNames(name, isAll = True, isFlat = False, flatSpacer=" "):
   return result
 
 def printMountainInfo(aMountain):
-  print( aMountain["name"] + "(" + aMountain["yomi"] + ")" )
+  yomi = ""
+  if "yomi" in aMountain:
+    yomi = "(" + aMountain["yomi"] + ")"
+  print( aMountain["name"] + yomi )
   print( ljust_jp( "altitude", 20 ) + " : " + aMountain["altitude"] )
-  print( ljust_jp( "location", 20 ) + " : " + aMountain["longitude"] + " " + aMountain["latitude"] )
+  if "longitude" in aMountain and "latitude" in aMountain:
+    print( ljust_jp( "location", 20 ) + " : " + aMountain["longitude"] + " " + aMountain["latitude"] )
   print( ljust_jp( "area", 20 ) + " : " + aMountain["area"] )
   if "distanceDelta" in aMountain and aMountain["distanceDelta"]:
     print( ljust_jp( "range", 20 ) + " : " + str( int( aMountain["distanceDelta"] ) ) + "km" )
