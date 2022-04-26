@@ -203,6 +203,7 @@ mountainInfos=[
   {"name":"多良岳","area":"九州", "altitude":"996m", "difficulty":"★★★", "fitnessLevel":""},
   {"name":"国見岳","area":"九州", "altitude":"1739m", "difficulty":"★★", "fitnessLevel":""},
   {"name":"高隅山","area":"九州", "altitude":"1236m", "difficulty":"★★", "fitnessLevel":""},
+  {"name":"高隈山","area":"九州", "altitude":"1236m", "difficulty":"★★", "fitnessLevel":""},
 
   {"name":"", "type":"200famous"},
   {"name":"天塩岳","area":"北海道","altitude":"1558m","difficulty":"★★","fitnessLevel":"27"},
