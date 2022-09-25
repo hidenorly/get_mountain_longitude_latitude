@@ -184,11 +184,12 @@ def isAltitudeAcceptableMountainInfo(aMountain, altitudeMin, altitudeMax):
   return isAltitudeOk
 
 
-def filterOutMountains(mountains, onlyFamousMountain, area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax):
+def filterOutMountains(mountains, onlyFamousMountain, onlyNoFamous, area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax):
   result = []
 
   for aMountain in mountains:
-    if ( ( area=="" or aMountain["area"].find(area)!=-1 ) and isAltitudeAcceptableMountainInfo( aMountain, altitudeMin, altitudeMax ) and ( onlyFamousMountain and isFamousMountainInfo( aMountain ) or (not onlyFamousMountain) ) and isFitnessAcceptableMountainInfo( aMountain, fitnessMin, fitnessMax ) and isDifficultyAcceptableMountainInfo( aMountain, difficultMin, difficultMax ) ):
+    isFamousMountain = isFamousMountainInfo( aMountain )
+    if ( ( area=="" or aMountain["area"].find(area)!=-1 ) and isAltitudeAcceptableMountainInfo( aMountain, altitudeMin, altitudeMax ) and ( ( onlyFamousMountain and isFamousMountain ) or ( onlyNoFamous and not isFamousMountain )  or ( not onlyFamousMountain and not onlyNoFamous ) ) and isFitnessAcceptableMountainInfo( aMountain, fitnessMin, fitnessMax ) and isDifficultyAcceptableMountainInfo( aMountain, difficultMin, difficultMax ) ):
       result.append( aMountain )
 
   return result
@@ -279,6 +280,7 @@ if __name__=="__main__":
   parser.add_argument('-nn', '--mountainNameOnlyFlat', action='store_true', default=False, help='List up mountain name only (list up alternative name too)')
   parser.add_argument('-j', '--json', action='store_true', default=False, help='output in json manner')
   parser.add_argument('-f', '--famous', action='store_true', default=False, help='Only famous mountains such as 100th, 200th and 300th mountains')
+  parser.add_argument('-nf', '--nofamous', action='store_true', default=False, help='Only NOT famous mountains')
   parser.add_argument('-a', '--area', action='store', default='', help='Area')
   parser.add_argument('-i', '--altitudeMin', action='store', default='0', help='Min altitude')
   parser.add_argument('-t', '--altitudeMax', action='store', default='9000', help='Max altitude')
@@ -340,7 +342,7 @@ if __name__=="__main__":
     result = fallbackSearch( args.args[0] )
 
   # filter out
-  result = filterOutMountains(result, args.famous, args.area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax )
+  result = filterOutMountains(result, args.famous, args.nofamous, args.area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax )
 
   # dump
   mountainOnlyNames = {}
