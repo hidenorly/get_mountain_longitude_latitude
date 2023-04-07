@@ -1,4 +1,4 @@
-#   Copyright 2021 hidenorly
+#   Copyright 2021, 2023 hidenorly
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 import sys
+import re
 import requests
 import argparse
 import unicodedata
@@ -270,6 +271,17 @@ def fallbackSearch(name):
 
   return result
 
+def isValidLongitudeLatitude(val):
+  patterns = [
+    "[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)",
+    "[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)"
+  ]
+  result = False
+  for aPattern in patterns:
+    result = bool(re.match(aPattern, val))
+    if result:
+      return result
+  return result
 
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
@@ -306,16 +318,21 @@ if __name__=="__main__":
 
   locationList = []
 
-  # search by longitude/latitude or name in mountainLocationDicHelper.getMountainLocationDicArray()
-  if len(args.args) == 1:
-    mountainList = mountainLocationDicHelper.getMountainLocationInfoFromMountainName( args.args[0] )
-    for aMountain in mountainList:
-      locationList.append( aMountain )
-  elif len(args.args) == 2:
-    aLocation = {}
-    aLocation["longitude"] = args.args[0]
-    aLocation["latitude"] = args.args[1]
-    locationList.append( aLocation )
+  argsLen = len(args.args)
+  for i in range(0, argsLen):
+    theArg = args.args[i]
+    if isValidLongitudeLatitude(theArg):
+      if i<(argsLen-1):
+        if isValidLongitudeLatitude(args.args[i+1]):
+          aLocation = {}
+          aLocation["longitude"] = args.args[i]
+          aLocation["latitude"] = args.args[i+1]
+          locationList.append( aLocation )
+          i = i + 1
+    else:
+      mountainList = mountainLocationDicHelper.getMountainLocationInfoFromMountainName( args.args[0] )
+      for aMountain in mountainList:
+        locationList.append( aMountain )
 
   result = []
 
