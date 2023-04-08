@@ -12,12 +12,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import os
 import sys
 import re
 import requests
 import argparse
 import unicodedata
 from geopy.distance import geodesic
+import json
 
 import mountainLocationDicHelper
 
@@ -283,6 +285,36 @@ def isValidLongitudeLatitude(val):
       return result
   return result
 
+def getCacheFilename(locationList, rangeMin, rangeMax):
+  cacheDir = "~/.mountainlistcache/"
+  if not os.path.exists(cacheDir):
+      os.makedirs(cacheDir)
+
+  names = set()
+  for aLocation in locationList:
+    if "name" in aLocation:
+      names.add(aLocation["name"])
+    else:
+      names.add(aLocation["longitude"]+"_"+aLocation["latitude"])
+
+  names = sorted(names)
+  names = "_".join(list(names))
+  names = cacheDir+str(rangeMin)+"_"+str(rangeMin)+"_"+names.replace("<", "").replace(">", "").replace("（", "").replace("）", "").replace("[", "").replace("]", "")+".json"
+  return names
+
+def getCachedResult(cacheFilename):
+  result = []
+  if os.path.exists(cacheFilename):
+    with open(cacheFilename, "r") as f:
+      result = json.load(f)
+  return result
+
+def storeCachedData(cacheFilename,result):
+  if len(cacheFilename)<255:
+    if not os.path.exists(cacheFilename):
+      with open(cacheFilename, "w") as f:
+          json.dump(result, f)
+
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
   parser.add_argument('args', nargs='*', help='mountain name such as 富士山 or longitude latitude')
@@ -316,9 +348,10 @@ if __name__=="__main__":
     parser.print_help()
     exit(-1)
 
-  locationList = []
+  locationList = {}
 
   argsLen = len(args.args)
+  isLongitudeLatitudeIncluded = False
   for i in range(0, argsLen):
     theArg = args.args[i]
     if isValidLongitudeLatitude(theArg):
@@ -327,20 +360,37 @@ if __name__=="__main__":
           aLocation = {}
           aLocation["longitude"] = args.args[i]
           aLocation["latitude"] = args.args[i+1]
-          locationList.append( aLocation )
+          locationList[aLocation["longitude"]+"_"+aLocation["latitude"]] = aLocation
           i = i + 1
+          isLongitudeLatitudeIncluded = True
     else:
-      mountainList = mountainLocationDicHelper.getMountainLocationInfoFromMountainName( args.args[0] )
+      mountainList = mountainLocationDicHelper.getMountainLocationInfoFromMountainName( theArg )
       for aMountain in mountainList:
-        locationList.append( aMountain )
+        locationList[aMountain["name"]] = aMountain
 
-  result = []
+  locationList = locationList.values()
 
-  # search by location
-  for aLocation in locationList:
-    aMountainList = getRangedMountains( aLocation["longitude"], aLocation["latitude"], rangeMin, rangeMax )
-    for aMountain in aMountainList:
-      result.append( aMountain )
+  cacheFilename = getCacheFilename(locationList, rangeMin, rangeMax)
+  result = getCachedResult(cacheFilename)
+  isSearchByLocation = False
+  if len(result)==0:
+    # search by location
+    if isLongitudeLatitudeIncluded or rangeMin!=0 or rangeMax!=0:
+      isSearchByLocation = True
+      for aLocation in locationList:
+        aMountainList = getRangedMountains( aLocation["longitude"], aLocation["latitude"], rangeMin, rangeMax )
+        for aMountain in aMountainList:
+          result.append( aMountain )
+    else:
+      result = locationList
+
+  if len(result)!=0:
+    storeCachedData(cacheFilename, result)
+
+  for aMountain in result:
+    if "distanceDelta" in aMountain:
+      isSearchByLocation = True
+      break
 
   # make it unique
   mountainLists = {}
@@ -352,7 +402,8 @@ if __name__=="__main__":
       result.append( aMountain )
 
   # sort
-  result = sorted(result, key=lambda x: x["distanceDelta"], reverse=False)
+  if isSearchByLocation:
+    result = sorted(result, key=lambda x: x["distanceDelta"], reverse=False)
 
   # fallback search by name in the mountainInfoDic
   if len( result ) == 0:
@@ -382,3 +433,4 @@ if __name__=="__main__":
     for aName, aName in mountainOnlyNames.items():
       print( aName, end = " ")
     print( "" )
+
