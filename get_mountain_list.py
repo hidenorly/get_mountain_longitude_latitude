@@ -286,34 +286,38 @@ def isValidLongitudeLatitude(val):
   return result
 
 def getCacheFilename(locationList, rangeMin, rangeMax):
-  cacheDir = "~/.mountainlistcache/"
+  cacheDir = os.path.expanduser("~/.mountainlistcache/")
   if not os.path.exists(cacheDir):
       os.makedirs(cacheDir)
 
   names = set()
   for aLocation in locationList:
-    if "name" in aLocation:
-      names.add(aLocation["name"])
-    else:
-      names.add(aLocation["longitude"]+"_"+aLocation["latitude"])
+    #if "name" in aLocation:
+    #  names.add(aLocation["name"])
+    #else:
+    #  if "longitude" in aLocation and "latitude" in aLocation:
+    #    names.add(aLocation["longitude"]+"_"+aLocation["latitude"])
+    names.add(aLocation)
 
   names = sorted(names)
   names = "_".join(list(names))
-  names = cacheDir+str(rangeMin)+"_"+str(rangeMin)+"_"+names.replace("<", "").replace(">", "").replace("（", "").replace("）", "").replace("[", "").replace("]", "")+".json"
+  names = cacheDir+str(rangeMin)+"_"+str(rangeMax)+"_"+names.replace("<", "").replace(">", "").replace("（", "").replace("）", "").replace("[", "").replace("]", "")+".json"
   return names
 
 def getCachedResult(cacheFilename):
   result = []
   if os.path.exists(cacheFilename):
-    with open(cacheFilename, "r") as f:
-      result = json.load(f)
+    if os.path.getsize(cacheFilename)>0:
+      with open(cacheFilename, "r", encoding="utf-8") as f:
+        result = json.load(f)
   return result
 
 def storeCachedData(cacheFilename,result):
-  if len(cacheFilename)<255:
-    if not os.path.exists(cacheFilename):
-      with open(cacheFilename, "w") as f:
-          json.dump(result, f)
+  if len(result)>0:
+    if len(cacheFilename)<255:
+      if not os.path.exists(cacheFilename):
+        with open(cacheFilename, "w", encoding="utf-8") as f:
+          json.dump(result, f, ensure_ascii=False)
 
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
@@ -368,12 +372,17 @@ if __name__=="__main__":
       for aMountain in mountainList:
         locationList[aMountain["name"]] = aMountain
 
-  locationList = locationList.values()
+  #locationList = locationList.values()
+  _tmp = []
+  for aLocation in locationList.values():
+    _tmp.append(aLocation)
+  locationList = _tmp
 
-  cacheFilename = getCacheFilename(locationList, rangeMin, rangeMax)
+  cacheFilename = getCacheFilename(args.args, rangeMin, rangeMax) #locationList, rangeMin, rangeMax)
   result = getCachedResult(cacheFilename)
   isSearchByLocation = False
   if len(result)==0:
+    # cache not found
     # search by location
     if isLongitudeLatitudeIncluded or rangeMin!=0 or rangeMax!=0:
       isSearchByLocation = True
@@ -395,7 +404,12 @@ if __name__=="__main__":
   # make it unique
   mountainLists = {}
   for aMountain in result:
-    mountainLists[ aMountain["name"]+aMountain["longitude"]+aMountain["latitude"] ] = aMountain
+    if "name" in aMountain:
+      if not "longitude" in aMountain:
+        aMountain["longitude"] = ""
+      if not "latitude" in aMountain:
+        aMountain["latitude"] = ""
+      mountainLists[ aMountain["name"]+aMountain["longitude"]+aMountain["latitude"] ] = aMountain
   if len( mountainLists ) != len( result ):
     result = []
     for id, aMountain in mountainLists.items():
