@@ -15,6 +15,8 @@
 import os
 import sys
 import re
+import csv
+import itertools
 import requests
 import argparse
 import unicodedata
@@ -187,13 +189,14 @@ def isAltitudeAcceptableMountainInfo(aMountain, altitudeMin, altitudeMax):
   return isAltitudeOk
 
 
-def filterOutMountains(mountains, onlyFamousMountain, onlyNoFamous, area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax):
+def filterOutMountains(mountains, onlyFamousMountain, onlyNoFamous, area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax, excludesList):
   result = []
 
   for aMountain in mountains:
     isFamousMountain = isFamousMountainInfo( aMountain )
     if ( ( area=="" or aMountain["area"].find(area)!=-1 ) and isAltitudeAcceptableMountainInfo( aMountain, altitudeMin, altitudeMax ) and ( ( onlyFamousMountain and isFamousMountain ) or ( onlyNoFamous and not isFamousMountain )  or ( not onlyFamousMountain and not onlyNoFamous ) ) and isFitnessAcceptableMountainInfo( aMountain, fitnessMin, fitnessMax ) and isDifficultyAcceptableMountainInfo( aMountain, difficultMin, difficultMax ) ):
-      result.append( aMountain )
+      if not excludesList or not MountainFilterUtil.isMatchedMountainRobust( excludesList, aMountain["name"] ):
+        result.append( aMountain )
 
   return result
 
@@ -319,6 +322,55 @@ def storeCachedData(cacheFilename,result):
         with open(cacheFilename, "w", encoding="utf-8") as f:
           json.dump(result, f, ensure_ascii=False)
 
+
+class MountainFilterUtil:
+  @staticmethod
+  def openCsv( fileName, delimiter="," ):
+    result = []
+    if os.path.exists( fileName ):
+      file = open( fileName )
+      if file:
+        reader = csv.reader(file, quoting=csv.QUOTE_MINIMAL, delimiter=delimiter)
+        for aRow in reader:
+          data = []
+          for aCol in aRow:
+            aCol = aCol.strip()
+            if aCol.startswith("\""):
+              aCol = aCol[1:len(aCol)]
+            if aCol.endswith("\""):
+              aCol = aCol[0:len(aCol)-1]
+            data.append( aCol )
+          result.append( data )
+    return result
+
+  @staticmethod
+  def isMatchedMountainRobust(arrayData, search):
+    result = not arrayData
+    for aData in arrayData:
+      if aData.startswith(search) or search.startswith(aData):
+        result = True
+        break
+    return result
+
+  @staticmethod
+  def getSetOfCsvs( csvFiles ):
+    result = set()
+    csvFiles = csvFiles.split(",")
+    for aCsvFile in csvFiles:
+      aCsvFile = os.path.expanduser( aCsvFile )
+      theSet = set( itertools.chain.from_iterable( MountainFilterUtil.openCsv( aCsvFile ) ) )
+      result = result.union( theSet )
+    return result
+
+  @staticmethod
+  def getMountainNameList( excludeFile ):
+    result = []
+    if excludeFile and os.path.exists(excludeFile):
+      excludes = MountainFilterUtil.getSetOfCsvs( excludeFile )
+      result = list(excludes)
+    return result
+
+
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
   parser.add_argument('args', nargs='*', help='mountain name such as 富士山 or longitude latitude')
@@ -336,6 +388,7 @@ if __name__=="__main__":
   parser.add_argument('-d', '--difficultMax', action='store', default='★★★★★', help='Max difficulty')
   parser.add_argument('-k', '--fitnessMin', action='store', default='', help='Min fitnessLevel')
   parser.add_argument('-g', '--fitnessMax', action='store', default='★★★★★', help='Max fitnessLevel')
+  parser.add_argument('-x', '--exclude', action='store', default='', help='Exclude mountains (.csv)')
 
   args = parser.parse_args()
 
@@ -347,6 +400,7 @@ if __name__=="__main__":
   difficultMax = getStarRank(args.difficultMax)
   fitnessMin = getStarRank(args.fitnessMin)
   fitnessMax = getStarRank(args.fitnessMax)
+  excludeMountainList = MountainFilterUtil.getMountainNameList(args.exclude)
 
   if len(args.args) == 0:
     parser.print_help()
@@ -424,7 +478,7 @@ if __name__=="__main__":
     result = fallbackSearch( args.args[0] )
 
   # filter out
-  result = filterOutMountains(result, args.famous, args.nofamous, args.area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax )
+  result = filterOutMountains(result, args.famous, args.nofamous, args.area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax, excludeMountainList )
 
   # dump
   mountainOnlyNames = {}
