@@ -389,6 +389,7 @@ if __name__=="__main__":
   parser.add_argument('-k', '--fitnessMin', action='store', default='', help='Min fitnessLevel')
   parser.add_argument('-g', '--fitnessMax', action='store', default='★★★★★', help='Max fitnessLevel')
   parser.add_argument('-x', '--exclude', action='store', default='', help='Exclude mountains (.csv)')
+  parser.add_argument('-l', '--include', action='store', default='', help='Include mountains (.csv)')
 
   args = parser.parse_args()
 
@@ -400,18 +401,22 @@ if __name__=="__main__":
   difficultMax = getStarRank(args.difficultMax)
   fitnessMin = getStarRank(args.fitnessMin)
   fitnessMax = getStarRank(args.fitnessMax)
+  includeMountainList = MountainFilterUtil.getMountainNameList(args.include)
   excludeMountainList = MountainFilterUtil.getMountainNameList(args.exclude)
 
-  if len(args.args) == 0:
+  argsList = args.args
+  argsList.extend(includeMountainList)
+
+  if len(argsList) == 0:
     parser.print_help()
     exit(-1)
 
   locationList = {}
 
-  argsLen = len(args.args)
+  argsLen = len(argsList)
   isLongitudeLatitudeIncluded = False
   for i in range(0, argsLen):
-    theArg = args.args[i]
+    theArg = argsList[i]
     if isValidLongitudeLatitude(theArg):
       if i<(argsLen-1):
         if isValidLongitudeLatitude(args.args[i+1]):
