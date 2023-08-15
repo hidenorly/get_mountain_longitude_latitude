@@ -355,7 +355,7 @@ class MountainFilterUtil:
   @staticmethod
   def getSetOfCsvs( csvFiles ):
     result = set()
-    csvFiles = csvFiles.split(",")
+    csvFiles = str(csvFiles).split(",")
     for aCsvFile in csvFiles:
       aCsvFile = os.path.expanduser( aCsvFile )
       theSet = set( itertools.chain.from_iterable( MountainFilterUtil.openCsv( aCsvFile ) ) )
@@ -363,12 +363,14 @@ class MountainFilterUtil:
     return result
 
   @staticmethod
-  def getMountainNameList( excludeFile ):
-    result = []
-    if excludeFile and os.path.exists(excludeFile):
-      excludes = MountainFilterUtil.getSetOfCsvs( excludeFile )
-      result = list(excludes)
-    return result
+  def getMountainNameList( mountainCsvFiles ):
+    result = set()
+
+    for aCsvFile in mountainCsvFiles:
+      if os.path.exists(aCsvFile):
+        result =  result | MountainFilterUtil.getSetOfCsvs( aCsvFile )
+
+    return list(result)
 
 
 if __name__=="__main__":
@@ -388,8 +390,8 @@ if __name__=="__main__":
   parser.add_argument('-d', '--difficultMax', action='store', default='★★★★★', help='Max difficulty')
   parser.add_argument('-k', '--fitnessMin', action='store', default='', help='Min fitnessLevel')
   parser.add_argument('-g', '--fitnessMax', action='store', default='★★★★★', help='Max fitnessLevel')
-  parser.add_argument('-x', '--exclude', action='store', default='', help='Exclude mountains (.csv)')
-  parser.add_argument('-l', '--include', action='store', default='', help='Include mountains (.csv)')
+  parser.add_argument('-x', '--exclude', action='append', default=[], help='Exclude mountains (.csv)')
+  parser.add_argument('-l', '--include', action='append', default=[], help='Include mountains (.csv)')
 
   args = parser.parse_args()
 
