@@ -26,16 +26,17 @@ $ python3 pip install geopy
 # how to use?
 
 ```
-usage: get_mountain_list.py [-h] [-r RANGEMAX] [-m RANGEMIN] [-n] [-nn] [-j] [-f] [-a AREA] [-i ALTITUDEMIN] [-t ALTITUDEMAX]
-                            [-e DIFFICULTMIN] [-d DIFFICULTMAX] [-k FITNESSMIN] [-g FITNESSMAX]
-                            [args ...]
+usage: get_mountain_list.py [-h] [-r RANGEMAX] [-m RANGEMIN] [-n] [-nn] [-j] [-f] [-nf] [-a AREA] [-i ALTITUDEMIN]
+                             [-t ALTITUDEMAX] [-e DIFFICULTMIN] [-d DIFFICULTMAX] [-k FITNESSMIN] [-g FITNESSMAX]
+                             [-x EXCLUDE] [-l INCLUDE]
+                             [args ...]
 
 Parse command line options.
 
 positional arguments:
   args                  mountain name such as 富士山 or longitude latitude
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -r RANGEMAX, --rangeMax RANGEMAX
                         Max distance
@@ -47,6 +48,7 @@ optional arguments:
                         List up mountain name only (list up alternative name too)
   -j, --json            output in json manner
   -f, --famous          Only famous mountains such as 100th, 200th and 300th mountains
+  -nf, --nofamous       Only NOT famous mountains
   -a AREA, --area AREA  Area
   -i ALTITUDEMIN, --altitudeMin ALTITUDEMIN
                         Min altitude
@@ -60,6 +62,10 @@ optional arguments:
                         Min fitnessLevel
   -g FITNESSMAX, --fitnessMax FITNESSMAX
                         Max fitnessLevel
+  -x EXCLUDE, --exclude EXCLUDE
+                        Exclude mountains (.csv)
+  -l INCLUDE, --include INCLUDE
+                        Include mountains (.csv)
 ```
 
 ## dump mountain location, etc. info.
@@ -141,4 +147,13 @@ $ python3 get_mountain_list.py アルプス --difficultMax="★★" --fitnessMax
 
 ```
 $ python3 get_mountain_list.py 男体山 --rangeMax=10 -nn | xargs python3 tenkura_get_weather.py -c
+```
+
+```list.csv
+富士山
+皇海山
+```
+
+```
+$ python3 get_mountain_list.py -l list.csv
 ```
