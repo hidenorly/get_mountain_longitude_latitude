@@ -288,39 +288,44 @@ def isValidLongitudeLatitude(val):
       return result
   return result
 
-def getCacheFilename(locationList, rangeMin, rangeMax):
-  cacheDir = os.path.expanduser("~/.mountainlistcache/")
-  if not os.path.exists(cacheDir):
-      os.makedirs(cacheDir)
 
-  names = set()
-  for aLocation in locationList:
-    #if "name" in aLocation:
-    #  names.add(aLocation["name"])
-    #else:
-    #  if "longitude" in aLocation and "latitude" in aLocation:
-    #    names.add(aLocation["longitude"]+"_"+aLocation["latitude"])
-    names.add(aLocation)
+class MountainCache:
+  @staticmethod
+  def getCacheFilename(locationList, rangeMin, rangeMax):
+    cacheDir = os.path.expanduser("~/.mountainlistcache/")
+    if not os.path.exists(cacheDir):
+        os.makedirs(cacheDir)
 
-  names = sorted(names)
-  names = "_".join(list(names))
-  names = cacheDir+str(rangeMin)+"_"+str(rangeMax)+"_"+names.replace("<", "").replace(">", "").replace("（", "").replace("）", "").replace("[", "").replace("]", "")+".json"
-  return names
+    names = set()
+    for aLocation in locationList:
+      #if "name" in aLocation:
+      #  names.add(aLocation["name"])
+      #else:
+      #  if "longitude" in aLocation and "latitude" in aLocation:
+      #    names.add(aLocation["longitude"]+"_"+aLocation["latitude"])
+      names.add(aLocation)
 
-def getCachedResult(cacheFilename):
-  result = []
-  if os.path.exists(cacheFilename):
-    if os.path.getsize(cacheFilename)>0:
-      with open(cacheFilename, "r", encoding="utf-8") as f:
-        result = json.load(f)
-  return result
+    names = sorted(names)
+    names = "_".join(list(names))
+    names = cacheDir+str(rangeMin)+"_"+str(rangeMax)+"_"+names.replace("<", "").replace(">", "").replace("（", "").replace("）", "").replace("[", "").replace("]", "")+".json"
+    return names
 
-def storeCachedData(cacheFilename,result):
-  if len(result)>0:
-    if len(cacheFilename)<255:
-      if not os.path.exists(cacheFilename):
-        with open(cacheFilename, "w", encoding="utf-8") as f:
-          json.dump(result, f, ensure_ascii=False)
+  @staticmethod
+  def getCachedResult(cacheFilename):
+    result = []
+    if os.path.exists(cacheFilename):
+      if os.path.getsize(cacheFilename)>0:
+        with open(cacheFilename, "r", encoding="utf-8") as f:
+          result = json.load(f)
+    return result
+
+  @staticmethod
+  def storeCachedData(cacheFilename,result):
+    if len(result)>0:
+      if len(cacheFilename)<255:
+        if not os.path.exists(cacheFilename):
+          with open(cacheFilename, "w", encoding="utf-8") as f:
+            json.dump(result, f, ensure_ascii=False)
 
 
 class MountainFilterUtil:
@@ -439,8 +444,8 @@ if __name__=="__main__":
     _tmp.append(aLocation)
   locationList = _tmp
 
-  cacheFilename = getCacheFilename(args.args, rangeMin, rangeMax) #locationList, rangeMin, rangeMax)
-  result = getCachedResult(cacheFilename)
+  cacheFilename = MountainCache.getCacheFilename(args.args, rangeMin, rangeMax) #locationList, rangeMin, rangeMax)
+  result = MountainCache.getCachedResult(cacheFilename)
   isSearchByLocation = False
   if len(result)==0:
     # cache not found
@@ -455,7 +460,7 @@ if __name__=="__main__":
       result = locationList
 
   if len(result)!=0:
-    storeCachedData(cacheFilename, result)
+    MountainCache.storeCachedData(cacheFilename, result)
 
   for aMountain in result:
     if "distanceDelta" in aMountain:
