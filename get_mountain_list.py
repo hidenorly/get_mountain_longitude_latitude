@@ -37,67 +37,71 @@ def ljust_jp(value, length, pad = " "):
       count_length += 2
   return value + pad * (length-count_length)
 
-def getMountainNames(name, isAll = True, isFlat = False, flatSpacer=" "):
-  result = []
 
-  minPos = []
-  pos = name.find("<")
-  if pos!=-1:
-    minPos.append(pos)
-    pos2 = name.find(">")
-    result.append( name[pos+1:pos2] )
-  pos = name.find("(")
-  if pos!=-1:
-    minPos.append(pos)
-    pos2 = name.find(")")
-    result.append( name[pos+1:pos2] )
-  pos = name.find("（")
-  if pos!=-1:
-    minPos.append(pos)
-    pos2 = name.find("）")
-    result.append( name[pos+1:pos2] )
+class MountainReportUtil:
+  @staticmethod
+  def getMountainNames(name, isAll = True, isFlat = False, flatSpacer=" "):
+    result = []
 
-  if len(minPos):
-    minPos = min(minPos)
-    result.insert(0, name[0:minPos] )
+    minPos = []
+    pos = name.find("<")
+    if pos!=-1:
+      minPos.append(pos)
+      pos2 = name.find(">")
+      result.append( name[pos+1:pos2] )
+    pos = name.find("(")
+    if pos!=-1:
+      minPos.append(pos)
+      pos2 = name.find(")")
+      result.append( name[pos+1:pos2] )
+    pos = name.find("（")
+    if pos!=-1:
+      minPos.append(pos)
+      pos2 = name.find("）")
+      result.append( name[pos+1:pos2] )
 
-  if isAll or len( result ) == 0:
-    result.insert(0, name)
+    if len(minPos):
+      minPos = min(minPos)
+      result.insert(0, name[0:minPos] )
 
-  if isFlat:
-    flatResult = ""
-    for aResult in result:
-      flatResult = flatResult + aResult + flatSpacer
-    if flatResult.endswith(flatSpacer):
-      flatResult = flatResult[0:len(flatResult)]
-    result = flatResult
+    if isAll or len( result ) == 0:
+      result.insert(0, name)
 
-  return result
+    if isFlat:
+      flatResult = ""
+      for aResult in result:
+        flatResult = flatResult + aResult + flatSpacer
+      if flatResult.endswith(flatSpacer):
+        flatResult = flatResult[0:len(flatResult)]
+      result = flatResult
 
-def printMountainInfo(aMountain):
-  yomi = ""
-  if "yomi" in aMountain:
-    yomi = "(" + aMountain["yomi"] + ")"
-  print( aMountain["name"] + yomi )
-  print( ljust_jp( "altitude", 20 ) + " : " + aMountain["altitude"] )
-  if "longitude" in aMountain and "latitude" in aMountain:
-    print( ljust_jp( "location", 20 ) + " : " + aMountain["longitude"] + " " + aMountain["latitude"] )
-  print( ljust_jp( "area", 20 ) + " : " + aMountain["area"] )
-  if "distanceDelta" in aMountain and aMountain["distanceDelta"]:
-    print( ljust_jp( "range", 20 ) + " : " + str( int( aMountain["distanceDelta"] ) ) + "km" )
-  if "difficulty" in aMountain and aMountain["difficulty"]:
-    print( ljust_jp( "difficulty", 20 ) + " : " + aMountain["difficulty"] )
-  if "fitnessLevel" in aMountain and aMountain["fitnessLevel"]:
-    print( ljust_jp( "fitnessLevel", 20 ) + " : " + aMountain["fitnessLevel"] )
-  if "famous" in aMountain and aMountain["famous"]:
-    print( ljust_jp( "famous", 20 ) + " : " + aMountain["famous"] )
-  print( "" )
+    return result
 
-def dump(aMountain):
-  if "distanceDelta" in aMountain:
-    print( "  {\"name\":\"" + aMountain["name"] +"\", \"yomi\":\"" + aMountain["yomi"] + "\", \"range\":\"" + str( int( aMountain["distanceDelta"] ) ) + "\", \"area\":\"" + aMountain["area"] +"\", \"longitude\":\"" + aMountain["longitude"] +"\", \"latitude\":\"" + aMountain["latitude"] +"\", \"altitude\":\"" + aMountain["altitude"] +"\"}," )
-  else:
-    print( "  {\"name\":\"" + aMountain["name"] +"\", \"yomi\":\"" + aMountain["yomi"] +"\", \"area\":\"" + aMountain["area"] +"\", \"longitude\":\"" + aMountain["longitude"] +"\", \"latitude\":\"" + aMountain["latitude"] +"\", \"altitude\":\"" + aMountain["altitude"] +"\"}," )
+  @staticmethod
+  def printMountainInfo(aMountain):
+    yomi = ""
+    if "yomi" in aMountain:
+      yomi = "(" + aMountain["yomi"] + ")"
+    print( aMountain["name"] + yomi )
+    print( ljust_jp( "altitude", 20 ) + " : " + aMountain["altitude"] )
+    if "longitude" in aMountain and "latitude" in aMountain:
+      print( ljust_jp( "location", 20 ) + " : " + aMountain["longitude"] + " " + aMountain["latitude"] )
+    print( ljust_jp( "area", 20 ) + " : " + aMountain["area"] )
+    if "distanceDelta" in aMountain and aMountain["distanceDelta"]:
+      print( ljust_jp( "range", 20 ) + " : " + str( int( aMountain["distanceDelta"] ) ) + "km" )
+    if "difficulty" in aMountain and aMountain["difficulty"]:
+      print( ljust_jp( "difficulty", 20 ) + " : " + aMountain["difficulty"] )
+    if "fitnessLevel" in aMountain and aMountain["fitnessLevel"]:
+      print( ljust_jp( "fitnessLevel", 20 ) + " : " + aMountain["fitnessLevel"] )
+    if "famous" in aMountain and aMountain["famous"]:
+      print( ljust_jp( "famous", 20 ) + " : " + aMountain["famous"] )
+    print( "" )
+
+  def dump(aMountain):
+    if "distanceDelta" in aMountain:
+      print( "  {\"name\":\"" + aMountain["name"] +"\", \"yomi\":\"" + aMountain["yomi"] + "\", \"range\":\"" + str( int( aMountain["distanceDelta"] ) ) + "\", \"area\":\"" + aMountain["area"] +"\", \"longitude\":\"" + aMountain["longitude"] +"\", \"latitude\":\"" + aMountain["latitude"] +"\", \"altitude\":\"" + aMountain["altitude"] +"\"}," )
+    else:
+      print( "  {\"name\":\"" + aMountain["name"] +"\", \"yomi\":\"" + aMountain["yomi"] +"\", \"area\":\"" + aMountain["area"] +"\", \"longitude\":\"" + aMountain["longitude"] +"\", \"latitude\":\"" + aMountain["latitude"] +"\", \"altitude\":\"" + aMountain["altitude"] +"\"}," )
 
 
 def getDistanceKm(longitude1, latitude1, longitude2, latitude2):
@@ -499,7 +503,7 @@ if __name__=="__main__":
       dump( aMountain )
     else:
       if args.mountainNameOnly or args.mountainNameOnlyFlat:
-        mountains = getMountainNames( aMountain["name"], not args.mountainNameOnlyFlat)
+        mountains = MountainReportUtil.getMountainNames( aMountain["name"], not args.mountainNameOnlyFlat)
         if args.mountainNameOnlyFlat:
           for aName in mountains:
             mountainOnlyNames[aName] = aName
@@ -507,7 +511,7 @@ if __name__=="__main__":
           if len(mountains):
             mountainOnlyNames[mountains[0]] = mountains[0]
       else:
-        printMountainInfo( aMountain )
+        MountainReportUtil.printMountainInfo( aMountain )
 
   if args.mountainNameOnly or args.mountainNameOnlyFlat:
     for aName, aName in mountainOnlyNames.items():
