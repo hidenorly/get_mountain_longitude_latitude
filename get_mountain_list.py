@@ -104,194 +104,6 @@ class MountainReportUtil:
       print( "  {\"name\":\"" + aMountain["name"] +"\", \"yomi\":\"" + aMountain["yomi"] +"\", \"area\":\"" + aMountain["area"] +"\", \"longitude\":\"" + aMountain["longitude"] +"\", \"latitude\":\"" + aMountain["latitude"] +"\", \"altitude\":\"" + aMountain["altitude"] +"\"}," )
 
 
-def getDistanceKm(longitude1, latitude1, longitude2, latitude2):
-  location1 = (longitude1, latitude1)
-  location2 = (longitude2, latitude2)
-
-  dis = geodesic(location1, location2).km
-
-  return dis
-
-
-def getStarRank(starLevel):
-  result = 0
-
-  nLen = len(starLevel)
-  i = 0
-
-  while i < nLen:
-    if starLevel[i:i+1]=="★":
-      result = result + 1
-    i = i + 1
-
-  return result
-
-def getCandidateMountainInfo( name ):
-  # 1st phase name match
-  theMountain = {}
-  if name in mountainInfoDic:
-    theMountain = mountainInfoDic[name]
-  else:
-    pos = name.find("<")
-    if pos!=-1:
-      name = name[0:pos]
-    pos = name.find("(")
-    if pos!=-1:
-      name = name[0:pos]
-    pos = name.find("（")
-    if pos!=-1:
-      name = name[0:pos]
-    for nameOfInfo, theInfo in mountainInfoDic.items():
-      if nameOfInfo.find( name )!=-1:
-        theMountain = theInfo
-        break
-
-  return theMountain
-
-def isFamousMountainInfo( theMountain ):
-  result = False
-
-  if ( "type" in theMountain and theMountain["type"]!="") or ("famous" in theMountain and theMountain["famous"]!=""):
-    result = True
-
-  return result
-
-def isDifficultyAcceptableMountainInfo( theMountain, difficultMin, difficultMax ):
-  result = True
-
-  if theMountain!=None:
-    if "difficulty" in theMountain and theMountain["difficulty"]:
-      difficulty = getStarRank( theMountain["difficulty"] )
-      if difficulty<difficultMin or difficulty>difficultMax:
-        result = False
-
-  return result
-
-def isFitnessAcceptableMountainInfo( theMountain, fitnessMin, fitnessMax ):
-  result = True
-
-  if theMountain!=None:
-    if "fitnessLevel" in theMountain and theMountain["fitnessLevel"]:
-      fitnessLevel = getStarRank( theMountain["fitnessLevel"] )
-      if fitnessLevel<fitnessMin or fitnessLevel>fitnessMax:
-        result = False
-
-  return result
-
-def isAltitudeAcceptableMountainInfo(aMountain, altitudeMin, altitudeMax):
-  isAltitudeOk = True
-
-  if "altitude" in aMountain:
-    theAltitude = aMountain["altitude"]
-    pos = theAltitude.find("m")
-    if pos!=-1:
-      theAltitude = theAltitude[0:pos]
-    theAltitude = int( theAltitude )
-    if theAltitude<altitudeMin or theAltitude>altitudeMax:
-      isAltitudeOk = False
-
-  return isAltitudeOk
-
-
-def filterOutMountains(mountains, onlyFamousMountain, onlyNoFamous, area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax, excludesList):
-  result = []
-
-  for aMountain in mountains:
-    isFamousMountain = isFamousMountainInfo( aMountain )
-    if ( ( area=="" or aMountain["area"].find(area)!=-1 ) and isAltitudeAcceptableMountainInfo( aMountain, altitudeMin, altitudeMax ) and ( ( onlyFamousMountain and isFamousMountain ) or ( onlyNoFamous and not isFamousMountain )  or ( not onlyFamousMountain and not onlyNoFamous ) ) and isFitnessAcceptableMountainInfo( aMountain, fitnessMin, fitnessMax ) and isDifficultyAcceptableMountainInfo( aMountain, difficultMin, difficultMax ) ):
-      if not excludesList or not MountainFilterUtil.isMatchedMountainRobust( excludesList, aMountain["name"] ):
-        result.append( aMountain )
-
-  return result
-
-
-def getRangedMountains( longitude, latitude, rangeMinKm, rangeMaxKm ):
-  result = []
-
-  for aMountain in mountainLocationDicHelper.getMountainLocationDicArray():
-    distanceDelta = getDistanceKm( longitude, latitude, aMountain["longitude"], aMountain["latitude"] )
-    if( distanceDelta >= rangeMinKm and distanceDelta <= rangeMaxKm ):
-      aMountain["distanceDelta"] = distanceDelta
-
-      theMountainInfo = getCandidateMountainInfo( aMountain["name"] )
-      if "altitude" in theMountainInfo and aMountain["altitude"].find("(")==-1:
-        aMountain["altitude"] = aMountain["altitude"] + " (" + theMountainInfo["altitude"] + ")"
-      if "difficulty" in theMountainInfo:
-        aMountain["difficulty"] = theMountainInfo["difficulty"]
-      if "fitnessLevel" in theMountainInfo:
-        aMountain["fitnessLevel"] = theMountainInfo["fitnessLevel"]
-      if "type" in theMountainInfo:
-        aMountain["famous"] = theMountainInfo["type"]
-
-      result.append( aMountain )
-
-  return result
-
-def getLocationMountainByName(name, nameOfInfo):
-  aLocationMountain = None
-
-  results = mountainLocationDicHelper.getMountainLocationInfoFromMountainName(name)
-  if len(results) == 0:
-    results = mountainLocationDicHelper.getMountainLocationInfoFromMountainName(nameOfInfo)
-
-  if len(results):
-    aLocationMountain = results[0]
-
-  return aLocationMountain
-
-
-def fallbackSearch(name):
-  result = []
-
-  theMountain = {}
-  if name in mountainInfoDic:
-    result.append( mountainInfoDic[name] )
-  else:
-    pos = name.find("<")
-    if pos!=-1:
-      name = name[0:pos]
-    pos = name.find("(")
-    if pos!=-1:
-      name = name[0:pos]
-    for nameOfInfo, theInfo in mountainInfoDic.items():
-      if nameOfInfo.find( name )!=-1 or theInfo["area"].find( name )!=-1:
-        theMountain = {}
-        theMountain["name"] = nameOfInfo
-
-        aLocationMountain = getLocationMountainByName( name, nameOfInfo )
-        if aLocationMountain:
-          theMountain["yomi"] = aLocationMountain["yomi"]
-          theMountain["longitude"] = aLocationMountain["longitude"]
-          theMountain["latitude"] = aLocationMountain["latitude"]
-          theMountain["area"] = theInfo["area"] + " (" + aLocationMountain["area"] +")"
-        else:
-          theMountain["yomi"] = ""
-          theMountain["longitude"] = ""
-          theMountain["latitude"] = ""
-          theMountain["area"] = theInfo["area"]
-
-        theMountain["altitude"] = theInfo["altitude"]
-        theMountain["range"] = 0
-        theMountain["difficulty"] = theInfo["difficulty"]
-        theMountain["fitnessLevel"] = theInfo["fitnessLevel"]
-        theMountain["famous"] = theInfo["type"]
-
-        result.append( theMountain )
-
-  return result
-
-def isValidLongitudeLatitude(val):
-  patterns = [
-    "[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)",
-    "[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)"
-  ]
-  result = False
-  for aPattern in patterns:
-    result = bool(re.match(aPattern, val))
-    if result:
-      return result
-  return result
-
 
 class MountainCache:
   @staticmethod
@@ -381,6 +193,203 @@ class MountainFilterUtil:
 
     return list(result)
 
+  @staticmethod
+  def getDistanceKm(longitude1, latitude1, longitude2, latitude2):
+    location1 = (longitude1, latitude1)
+    location2 = (longitude2, latitude2)
+
+    dis = geodesic(location1, location2).km
+
+    return dis
+
+  @staticmethod
+  def getStarRank(starLevel):
+    result = 0
+
+    nLen = len(starLevel)
+    i = 0
+
+    while i < nLen:
+      if starLevel[i:i+1]=="★":
+        result = result + 1
+      i = i + 1
+
+    return result
+
+  @staticmethod
+  def getCandidateMountainInfo( name ):
+    # 1st phase name match
+    theMountain = {}
+    if name in mountainInfoDic:
+      theMountain = mountainInfoDic[name]
+    else:
+      pos = name.find("<")
+      if pos!=-1:
+        name = name[0:pos]
+      pos = name.find("(")
+      if pos!=-1:
+        name = name[0:pos]
+      pos = name.find("（")
+      if pos!=-1:
+        name = name[0:pos]
+      for nameOfInfo, theInfo in mountainInfoDic.items():
+        if nameOfInfo.find( name )!=-1:
+          theMountain = theInfo
+          break
+
+    return theMountain
+
+  @staticmethod
+  def isFamousMountainInfo( theMountain ):
+    result = False
+
+    if ( "type" in theMountain and theMountain["type"]!="") or ("famous" in theMountain and theMountain["famous"]!=""):
+      result = True
+
+    return result
+
+  @staticmethod
+  def isDifficultyAcceptableMountainInfo( theMountain, difficultMin, difficultMax ):
+    result = True
+
+    if theMountain!=None:
+      if "difficulty" in theMountain and theMountain["difficulty"]:
+        difficulty = MountainFilterUtil.getStarRank( theMountain["difficulty"] )
+        if difficulty<difficultMin or difficulty>difficultMax:
+          result = False
+
+    return result
+
+  @staticmethod
+  def isFitnessAcceptableMountainInfo( theMountain, fitnessMin, fitnessMax ):
+    result = True
+
+    if theMountain!=None:
+      if "fitnessLevel" in theMountain and theMountain["fitnessLevel"]:
+        fitnessLevel = MountainFilterUtil.getStarRank( theMountain["fitnessLevel"] )
+        if fitnessLevel<fitnessMin or fitnessLevel>fitnessMax:
+          result = False
+
+    return result
+
+  @staticmethod
+  def isAltitudeAcceptableMountainInfo(aMountain, altitudeMin, altitudeMax):
+    isAltitudeOk = True
+
+    if "altitude" in aMountain:
+      theAltitude = aMountain["altitude"]
+      pos = theAltitude.find("m")
+      if pos!=-1:
+        theAltitude = theAltitude[0:pos]
+      theAltitude = int( theAltitude )
+      if theAltitude<altitudeMin or theAltitude>altitudeMax:
+        isAltitudeOk = False
+
+    return isAltitudeOk
+
+  @staticmethod
+  def filterOutMountains(mountains, onlyFamousMountain, onlyNoFamous, area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax, excludesList):
+    result = []
+
+    for aMountain in mountains:
+      isFamousMountain = MountainFilterUtil.isFamousMountainInfo( aMountain )
+      if ( ( area=="" or aMountain["area"].find(area)!=-1 ) and MountainFilterUtil.isAltitudeAcceptableMountainInfo( aMountain, altitudeMin, altitudeMax ) and ( ( onlyFamousMountain and isFamousMountain ) or ( onlyNoFamous and not isFamousMountain )  or ( not onlyFamousMountain and not onlyNoFamous ) ) and MountainFilterUtil.isFitnessAcceptableMountainInfo( aMountain, fitnessMin, fitnessMax ) and MountainFilterUtil.isDifficultyAcceptableMountainInfo( aMountain, difficultMin, difficultMax ) ):
+        if not excludesList or not MountainFilterUtil.isMatchedMountainRobust( excludesList, aMountain["name"] ):
+          result.append( aMountain )
+
+    return result
+
+  @staticmethod
+  def getRangedMountains( longitude, latitude, rangeMinKm, rangeMaxKm ):
+    result = []
+
+    for aMountain in mountainLocationDicHelper.getMountainLocationDicArray():
+      distanceDelta = MountainFilterUtil.getDistanceKm( longitude, latitude, aMountain["longitude"], aMountain["latitude"] )
+      if( distanceDelta >= rangeMinKm and distanceDelta <= rangeMaxKm ):
+        aMountain["distanceDelta"] = distanceDelta
+
+        theMountainInfo = MountainFilterUtil.getCandidateMountainInfo( aMountain["name"] )
+        if "altitude" in theMountainInfo and aMountain["altitude"].find("(")==-1:
+          aMountain["altitude"] = aMountain["altitude"] + " (" + theMountainInfo["altitude"] + ")"
+        if "difficulty" in theMountainInfo:
+          aMountain["difficulty"] = theMountainInfo["difficulty"]
+        if "fitnessLevel" in theMountainInfo:
+          aMountain["fitnessLevel"] = theMountainInfo["fitnessLevel"]
+        if "type" in theMountainInfo:
+          aMountain["famous"] = theMountainInfo["type"]
+
+        result.append( aMountain )
+
+    return result
+
+  @staticmethod
+  def getLocationMountainByName(name, nameOfInfo):
+    aLocationMountain = None
+
+    results = mountainLocationDicHelper.getMountainLocationInfoFromMountainName(name)
+    if len(results) == 0:
+      results = mountainLocationDicHelper.getMountainLocationInfoFromMountainName(nameOfInfo)
+
+    if len(results):
+      aLocationMountain = results[0]
+
+    return aLocationMountain
+
+  @staticmethod
+  def fallbackSearch(name):
+    result = []
+
+    theMountain = {}
+    if name in mountainInfoDic:
+      result.append( mountainInfoDic[name] )
+    else:
+      pos = name.find("<")
+      if pos!=-1:
+        name = name[0:pos]
+      pos = name.find("(")
+      if pos!=-1:
+        name = name[0:pos]
+      for nameOfInfo, theInfo in mountainInfoDic.items():
+        if nameOfInfo.find( name )!=-1 or theInfo["area"].find( name )!=-1:
+          theMountain = {}
+          theMountain["name"] = nameOfInfo
+
+          aLocationMountain = MountainFilterUtil.getLocationMountainByName( name, nameOfInfo )
+          if aLocationMountain:
+            theMountain["yomi"] = aLocationMountain["yomi"]
+            theMountain["longitude"] = aLocationMountain["longitude"]
+            theMountain["latitude"] = aLocationMountain["latitude"]
+            theMountain["area"] = theInfo["area"] + " (" + aLocationMountain["area"] +")"
+          else:
+            theMountain["yomi"] = ""
+            theMountain["longitude"] = ""
+            theMountain["latitude"] = ""
+            theMountain["area"] = theInfo["area"]
+
+          theMountain["altitude"] = theInfo["altitude"]
+          theMountain["range"] = 0
+          theMountain["difficulty"] = theInfo["difficulty"]
+          theMountain["fitnessLevel"] = theInfo["fitnessLevel"]
+          theMountain["famous"] = theInfo["type"]
+
+          result.append( theMountain )
+
+    return result
+
+  @staticmethod
+  def isValidLongitudeLatitude(val):
+    patterns = [
+      "[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)",
+      "[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)"
+    ]
+    result = False
+    for aPattern in patterns:
+      result = bool(re.match(aPattern, val))
+      if result:
+        return result
+    return result
+
+
 
 if __name__=="__main__":
   parser = argparse.ArgumentParser(description='Parse command line options.')
@@ -408,10 +417,10 @@ if __name__=="__main__":
   rangeMax = float(args.rangeMax)
   altitudeMin = int(args.altitudeMin)
   altitudeMax = int(args.altitudeMax)
-  difficultMin = getStarRank(args.difficultMin)
-  difficultMax = getStarRank(args.difficultMax)
-  fitnessMin = getStarRank(args.fitnessMin)
-  fitnessMax = getStarRank(args.fitnessMax)
+  difficultMin = MountainFilterUtil.getStarRank(args.difficultMin)
+  difficultMax = MountainFilterUtil.getStarRank(args.difficultMax)
+  fitnessMin = MountainFilterUtil.getStarRank(args.fitnessMin)
+  fitnessMax = MountainFilterUtil.getStarRank(args.fitnessMax)
   includeMountainList = MountainFilterUtil.getMountainNameList(args.include)
   excludeMountainList = MountainFilterUtil.getMountainNameList(args.exclude)
 
@@ -428,9 +437,9 @@ if __name__=="__main__":
   isLongitudeLatitudeIncluded = False
   for i in range(0, argsLen):
     theArg = argsList[i]
-    if isValidLongitudeLatitude(theArg):
+    if MountainFilterUtil.isValidLongitudeLatitude(theArg):
       if i<(argsLen-1):
-        if isValidLongitudeLatitude(args.args[i+1]):
+        if MountainFilterUtil.isValidLongitudeLatitude(args.args[i+1]):
           aLocation = {}
           aLocation["longitude"] = args.args[i]
           aLocation["latitude"] = args.args[i+1]
@@ -457,7 +466,7 @@ if __name__=="__main__":
     if isLongitudeLatitudeIncluded or rangeMin!=0 or rangeMax!=0:
       isSearchByLocation = True
       for aLocation in locationList:
-        aMountainList = getRangedMountains( aLocation["longitude"], aLocation["latitude"], rangeMin, rangeMax )
+        aMountainList = MountainFilterUtil.getRangedMountains( aLocation["longitude"], aLocation["latitude"], rangeMin, rangeMax )
         for aMountain in aMountainList:
           result.append( aMountain )
     else:
@@ -491,10 +500,10 @@ if __name__=="__main__":
 
   # fallback search by name in the mountainInfoDic
   if len( result ) == 0:
-    result = fallbackSearch( args.args[0] )
+    result = MountainFilterUtil.fallbackSearch( args.args[0] )
 
   # filter out
-  result = filterOutMountains(result, args.famous, args.nofamous, args.area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax, excludeMountainList )
+  result = MountainFilterUtil.filterOutMountains(result, args.famous, args.nofamous, args.area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax, excludeMountainList )
 
   # dump
   mountainOnlyNames = {}
