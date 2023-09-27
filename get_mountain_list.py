@@ -104,6 +104,21 @@ class MountainReportUtil:
       print( "  {\"name\":\"" + aMountain["name"] +"\", \"yomi\":\"" + aMountain["yomi"] +"\", \"area\":\"" + aMountain["area"] +"\", \"longitude\":\"" + aMountain["longitude"] +"\", \"latitude\":\"" + aMountain["latitude"] +"\", \"altitude\":\"" + aMountain["altitude"] +"\"}," )
 
 
+class MountainInfoUtil:
+  @staticmethod
+  def getEnsuredMountainInfo(aMountain):
+    result = aMountain
+    if "name" in aMountain and aMountain["name"] in mountainInfoDic:
+      theMountainInfo = mountainInfoDic[aMountain["name"]]
+      if "type" in theMountainInfo:
+        result["famous"] = theMountainInfo["type"]
+      if "difficulty" in theMountainInfo:
+        result["difficulty"] = theMountainInfo["difficulty"]
+      if "fitnessLevel" in theMountainInfo:
+        result["fitnessLevel"] = theMountainInfo["fitnessLevel"]
+
+    return result
+
 
 class MountainCache:
   @staticmethod
@@ -433,6 +448,7 @@ if __name__=="__main__":
 
   locationList = {}
 
+  # argument check. longitude or mountainname or area name
   argsLen = len(argsList)
   isLongitudeLatitudeIncluded = False
   for i in range(0, argsLen):
@@ -449,14 +465,15 @@ if __name__=="__main__":
     else:
       mountainList = mountainLocationDicHelper.getMountainLocationInfoFromMountainName( theArg )
       for aMountain in mountainList:
-        locationList[aMountain["name"]] = aMountain
+        locationList[aMountain["name"]] = MountainInfoUtil.getEnsuredMountainInfo(aMountain)
 
   #locationList = locationList.values()
   _tmp = []
   for aLocation in locationList.values():
-    _tmp.append(aLocation)
+    _tmp.append(MountainInfoUtil.getEnsuredMountainInfo(aLocation))
   locationList = _tmp
 
+  # result cache
   cacheFilename = MountainCache.getCacheFilename(args.args, rangeMin, rangeMax) #locationList, rangeMin, rangeMax)
   result = MountainCache.getCachedResult(cacheFilename)
   isSearchByLocation = False
@@ -492,7 +509,7 @@ if __name__=="__main__":
   if len( mountainLists ) != len( result ):
     result = []
     for id, aMountain in mountainLists.items():
-      result.append( aMountain )
+      result.append( MountainInfoUtil.getEnsuredMountainInfo(aMountain) )
 
   # sort
   if isSearchByLocation:
