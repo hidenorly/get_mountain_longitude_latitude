@@ -394,8 +394,8 @@ class MountainFilterUtil:
   @staticmethod
   def isValidLongitudeLatitude(val):
     patterns = [
-      "[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)",
-      "[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)"
+      r"[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)",
+      r"[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)"
     ]
     result = False
     for aPattern in patterns:
