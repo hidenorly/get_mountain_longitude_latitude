@@ -1,4 +1,4 @@
-#   Copyright 2021, 2023 hidenorly
+#   Copyright 2021, 2023, 2024 hidenorly
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -351,7 +351,7 @@ class MountainFilterUtil:
     return aLocationMountain
 
   @staticmethod
-  def fallbackSearch(name):
+  def fallbackSearch(name, isMountainNameOnly=False):
     result = []
 
     theMountain = {}
@@ -365,7 +365,7 @@ class MountainFilterUtil:
       if pos!=-1:
         name = name[0:pos]
       for nameOfInfo, theInfo in mountainInfoDic.items():
-        if nameOfInfo.find( name )!=-1 or theInfo["area"].find( name )!=-1:
+        if nameOfInfo.find( name )!=-1 or (not isMountainNameOnly and theInfo["area"].find( name )!=-1):
           theMountain = {}
           theMountain["name"] = nameOfInfo
 
@@ -404,6 +404,88 @@ class MountainFilterUtil:
         return result
     return result
 
+
+class MountainList:
+  def get_cached_filtered_mountain_list(argsList, mountainSearchOnly=False, famous=False, nofamous=False, area="", altitudeMin=0, altitudeMax=9000, difficultMin=0, difficultMax=5, fitnessMin=0, fitnessMax=5, excludeMountainList=[], rangeMin=0, rangeMax=0):
+    result = []
+
+    locationList = {}
+
+    # argument check. longitude or mountainname or area name
+    argsLen = len(argsList)
+    isLongitudeLatitudeIncluded = False
+    for i in range(0, argsLen):
+      theArg = argsList[i]
+      if MountainFilterUtil.isValidLongitudeLatitude(theArg):
+        if i<(argsLen-1):
+          if MountainFilterUtil.isValidLongitudeLatitude(argsList[i+1]):
+            aLocation = {}
+            aLocation["longitude"] = argsList[i]
+            aLocation["latitude"] = aargsList[i+1]
+            locationList[aLocation["longitude"]+"_"+aLocation["latitude"]] = aLocation
+            i = i + 1
+            isLongitudeLatitudeIncluded = True
+      else:
+        mountainList = mountainLocationDicHelper.getMountainLocationInfoFromMountainName( theArg )
+        for aMountain in mountainList:
+          locationList[aMountain["name"]] = MountainInfoUtil.getEnsuredMountainInfo(aMountain)
+
+    #locationList = locationList.values()
+    _tmp = []
+    for aLocation in locationList.values():
+      _tmp.append(MountainInfoUtil.getEnsuredMountainInfo(aLocation))
+    locationList = _tmp
+
+    # result cache
+    cacheFilename = MountainCache.getCacheFilename(argsList, rangeMin, rangeMax) #locationList, rangeMin, rangeMax)
+    result = MountainCache.getCachedResult(cacheFilename)
+    isSearchByLocation = False
+    if not result:
+      # cache not found
+      # search by location
+      if isLongitudeLatitudeIncluded or rangeMin!=0 or rangeMax!=0:
+        isSearchByLocation = True
+        for aLocation in locationList:
+          aMountainList = MountainFilterUtil.getRangedMountains( aLocation["longitude"], aLocation["latitude"], rangeMin, rangeMax )
+          for aMountain in aMountainList:
+            result.append( aMountain )
+      else:
+        result = locationList
+
+    if not result:
+      MountainCache.storeCachedData(cacheFilename, result)
+
+    for aMountain in list(result):
+      if "distanceDelta" in aMountain:
+        isSearchByLocation = True
+        break
+
+    # make it unique
+    mountainLists = {}
+    for aMountain in list(result):
+      if "name" in aMountain:
+        if not "longitude" in aMountain:
+          aMountain["longitude"] = ""
+        if not "latitude" in aMountain:
+          aMountain["latitude"] = ""
+        mountainLists[ aMountain["name"]+aMountain["longitude"]+aMountain["latitude"] ] = aMountain
+    if len( mountainLists ) != len( result ):
+      result = []
+      for id, aMountain in mountainLists.items():
+        result.append( MountainInfoUtil.getEnsuredMountainInfo(aMountain) )
+
+    # sort
+    if isSearchByLocation:
+      result = sorted(result, key=lambda x: x["distanceDelta"], reverse=False)
+
+    # fallback search by name in the mountainInfoDic
+    if not result and argsList:
+      result = MountainFilterUtil.fallbackSearch( argsList[0], mountainSearchOnly )
+
+    # filter out
+    result = MountainFilterUtil.filterOutMountains(result, famous, nofamous, area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax, excludeMountainList )
+
+    return result
 
 
 if __name__=="__main__":
@@ -446,81 +528,8 @@ if __name__=="__main__":
     parser.print_help()
     exit(-1)
 
-  locationList = {}
-
-  # argument check. longitude or mountainname or area name
-  argsLen = len(argsList)
-  isLongitudeLatitudeIncluded = False
-  for i in range(0, argsLen):
-    theArg = argsList[i]
-    if MountainFilterUtil.isValidLongitudeLatitude(theArg):
-      if i<(argsLen-1):
-        if MountainFilterUtil.isValidLongitudeLatitude(args.args[i+1]):
-          aLocation = {}
-          aLocation["longitude"] = args.args[i]
-          aLocation["latitude"] = args.args[i+1]
-          locationList[aLocation["longitude"]+"_"+aLocation["latitude"]] = aLocation
-          i = i + 1
-          isLongitudeLatitudeIncluded = True
-    else:
-      mountainList = mountainLocationDicHelper.getMountainLocationInfoFromMountainName( theArg )
-      for aMountain in mountainList:
-        locationList[aMountain["name"]] = MountainInfoUtil.getEnsuredMountainInfo(aMountain)
-
-  #locationList = locationList.values()
-  _tmp = []
-  for aLocation in locationList.values():
-    _tmp.append(MountainInfoUtil.getEnsuredMountainInfo(aLocation))
-  locationList = _tmp
-
-  # result cache
-  cacheFilename = MountainCache.getCacheFilename(args.args, rangeMin, rangeMax) #locationList, rangeMin, rangeMax)
-  result = MountainCache.getCachedResult(cacheFilename)
-  isSearchByLocation = False
-  if len(result)==0:
-    # cache not found
-    # search by location
-    if isLongitudeLatitudeIncluded or rangeMin!=0 or rangeMax!=0:
-      isSearchByLocation = True
-      for aLocation in locationList:
-        aMountainList = MountainFilterUtil.getRangedMountains( aLocation["longitude"], aLocation["latitude"], rangeMin, rangeMax )
-        for aMountain in aMountainList:
-          result.append( aMountain )
-    else:
-      result = locationList
-
-  if len(result)!=0:
-    MountainCache.storeCachedData(cacheFilename, result)
-
-  for aMountain in result:
-    if "distanceDelta" in aMountain:
-      isSearchByLocation = True
-      break
-
-  # make it unique
-  mountainLists = {}
-  for aMountain in result:
-    if "name" in aMountain:
-      if not "longitude" in aMountain:
-        aMountain["longitude"] = ""
-      if not "latitude" in aMountain:
-        aMountain["latitude"] = ""
-      mountainLists[ aMountain["name"]+aMountain["longitude"]+aMountain["latitude"] ] = aMountain
-  if len( mountainLists ) != len( result ):
-    result = []
-    for id, aMountain in mountainLists.items():
-      result.append( MountainInfoUtil.getEnsuredMountainInfo(aMountain) )
-
-  # sort
-  if isSearchByLocation:
-    result = sorted(result, key=lambda x: x["distanceDelta"], reverse=False)
-
-  # fallback search by name in the mountainInfoDic
-  if len( result ) == 0:
-    result = MountainFilterUtil.fallbackSearch( args.args[0] )
-
-  # filter out
-  result = MountainFilterUtil.filterOutMountains(result, args.famous, args.nofamous, args.area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax, excludeMountainList )
+  # get cached filtered mountain list
+  result = MountainList.get_cached_filtered_mountain_list(argsList, False, args.famous, args.nofamous, args.area, altitudeMin, altitudeMax, difficultMin, difficultMax, fitnessMin, fitnessMax, excludeMountainList, rangeMin, rangeMax)
 
   # dump
   mountainOnlyNames = {}
