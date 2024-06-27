@@ -421,7 +421,7 @@ class MountainList:
           if MountainFilterUtil.isValidLongitudeLatitude(argsList[i+1]):
             aLocation = {}
             aLocation["longitude"] = argsList[i]
-            aLocation["latitude"] = aargsList[i+1]
+            aLocation["latitude"] = argsList[i+1]
             locationList[aLocation["longitude"]+"_"+aLocation["latitude"]] = aLocation
             i = i + 1
             isLongitudeLatitudeIncluded = True
