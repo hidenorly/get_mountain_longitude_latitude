@@ -1,4 +1,4 @@
-#   Copyright 2021, 2023, 2024 hidenorly
+#   Copyright 2021, 2023, 2024, 2025 hidenorly
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import argparse
 import unicodedata
 from geopy.distance import geodesic
 import json
+from get_latitude_longitude_from_name import getLatitudeLongitudeFromPlaceName
 
 import mountainLocationDicHelper
 
@@ -427,8 +428,17 @@ class MountainList:
             isLongitudeLatitudeIncluded = True
       else:
         mountainList = mountainLocationDicHelper.getMountainLocationInfoFromMountainName( theArg )
-        for aMountain in mountainList:
-          locationList[aMountain["name"]] = MountainInfoUtil.getEnsuredMountainInfo(aMountain)
+        if mountainList:
+          for aMountain in mountainList:
+            locationList[aMountain["name"]] = MountainInfoUtil.getEnsuredMountainInfo(aMountain)
+        else:
+          # fallback from place name
+          longitude, latitude, _ = getLatitudeLongitudeFromPlaceName(theArg)
+          if latitude and longitude:
+            aLocation = {}
+            aLocation["longitude"] = str(longitude)
+            aLocation["latitude"] = str(latitude)
+            locationList[aLocation["longitude"]+"_"+aLocation["latitude"]] = aLocation
 
     #locationList = locationList.values()
     _tmp = []

@@ -18,14 +18,21 @@ import argparse
 
 from geopy.geocoders import Nominatim
 
+def getLatitudeLongitudeFromPlaceName(place_name):
+	geolocator = Nominatim(user_agent="my_usera_gent")
+	location = geolocator.geocode(place_name)
+	if location:
+		return location.latitude, location.longitude, location.address
+	return None, None, None
+
+
 if __name__=="__main__":
 	parser = argparse.ArgumentParser(description='Location from place_name')
 	parser.add_argument('args', nargs='*', help='place names such as 富士山')
 	args = parser.parse_args()
 
-	geolocator = Nominatim(user_agent="my_usera_gent")
 	for place_name in args.args:
-		location = geolocator.geocode(place_name)
-		if location:
-			print(location.address)
-			print(location.latitude, location.longitude)
+		latitude, longitude, address = getLatitudeLongitudeFromPlaceName(place_name)
+		if latitude and longitude and address:
+			print(address)
+			print(latitude, longitude)
